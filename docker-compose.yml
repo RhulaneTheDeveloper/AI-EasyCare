@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: easycare-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: easycare_db
+      MYSQL_USER: easycare_user
+      MYSQL_PASSWORD: easycare_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - easycare-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: easycare-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/easycare_db
+      SPRING_DATASOURCE_USERNAME: easycare_user
+      SPRING_DATASOURCE_PASSWORD: easycare_pass
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    networks:
+      - easycare-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: easycare-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:8080
+    depends_on:
+      - backend
+    networks:
+      - easycare-network
+
+volumes:
+  mysql_data:
+
+networks:
+  easycare-network:
+    driver: bridge
